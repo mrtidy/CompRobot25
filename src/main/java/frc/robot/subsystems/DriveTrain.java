@@ -1,10 +1,11 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.wpilibj.RobotBase.isReal;
+
 import java.io.File;
 import java.util.function.DoubleSupplier;
 
 import javax.naming.ConfigurationException;
-
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
@@ -14,14 +15,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
+import frc.robot.LimelightDevice;
 import frc.robot.commands.drivebase.MoveAtAngle;
 import frc.robot.commands.drivebase.MoveFacingCommand;
 import frc.robot.commands.drivebase.MoveManualCommandField;
@@ -30,7 +30,6 @@ import frc.robot.commands.drivebase.StopCommand;
 import frc.robot.config.AllianceLandmarksConfig;
 import frc.robot.config.ConfigurationLoader;
 import frc.robot.config.DriveTrainConfig;
-//import frc.robot.LimelightDevice;
 import swervelib.SwerveController;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
@@ -45,13 +44,9 @@ import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 public class DriveTrain extends SubsystemBase {
     private static double            kDt                    = 0.02;
 
-    //LimelightDevice                  primaryLimelight       = new LimelightDevice("limelight");
-
     boolean                          hasTarget              = true;
 
     SwerveDrive                      swerveDrive;
-
-    private boolean                  isSimulation           = !RobotBase.isReal();
 
     private Translation2d            centerOfRotationMeters = new Translation2d();
 
@@ -92,10 +87,14 @@ public class DriveTrain extends SubsystemBase {
 
     private AllianceLandmarksConfig  allianceLandmarksConfig;
 
+    private LimelightDevice limelight;
+
     /**
      * Constructor
      */
-    public DriveTrain() {
+    public DriveTrain(LimelightDevice limelight) {
+        this.limelight = limelight;
+
         try {
             loadConfigurationFiles();
             configureSwerveDrive();
@@ -127,18 +126,17 @@ public class DriveTrain extends SubsystemBase {
      *
      * @return void
      */
-    //@Override
-    //public void periodic() {
-    //    Pose2d current_pose = swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition();
-    //
-    //     if (!isSimulation) {
-    //        limelightPeriodic(current_pose.getRotation().getDegrees());
-    // }
+    @Override
+    public void periodic() {
+        Pose2d current_pose = swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition();    
+        if (limelight != null && isReal()) {
+            limelightPeriodic(current_pose.getRotation().getDegrees());
+        }
 
-    //    SmartDashboard.putNumber("RobotX", current_pose.getX());
-    //    SmartDashboard.putNumber("RobotY", current_pose.getY());
-    //    SmartDashboard.putNumber("RobotRot", current_pose.getRotation().getDegrees());
-    //}
+        SmartDashboard.putNumber("RobotX", current_pose.getX());
+        SmartDashboard.putNumber("RobotY", current_pose.getY());
+        SmartDashboard.putNumber("RobotRot", current_pose.getRotation().getDegrees());
+    }
 
     /**
      * Called once per timeslice while simulating
@@ -429,20 +427,19 @@ public class DriveTrain extends SubsystemBase {
         }
     }
 
-    
-
     /**
-     * Gets estimated pose from limelight if available
+     * Gets estimated pose from limelight if available and pass updated pose
+     * to swerve drive if at least 1 tag was visible.
      *
      * @param degrees angle robot is facing
      * @return void
      */
-   // private void limelightPeriodic(double degrees) {
-    //    var primaryLightLightPose = primaryLimelight.getPoseEstimate(degrees);
-    //    if (primaryLightLightPose.tagCount != 0) {
-    //        swerveDrive.addVisionMeasurement(primaryLightLightPose.pose, primaryLightLightPose.timestampSeconds);
-    //    }
-    //}
+    private void limelightPeriodic(double degrees) {
+        var limelightPost = limelight.getPoseEstimate(degrees);
+        if (limelightPost.tagCount > 0) {
+            swerveDrive.addVisionMeasurement(limelightPost.pose, limelightPost.timestampSeconds);
+        }
+    }
 
     /**
      * Issue set speeds to swerve drive

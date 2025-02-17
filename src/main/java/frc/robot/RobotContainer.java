@@ -18,7 +18,11 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
  */
 public class RobotContainer {
 
-    private final DriveTrain m_driveTrain = new DriveTrain();
+    // The Limelight is used for AprilTag processing and pose estimation but
+    // may also provide the video stream for drive camera.
+    LimelightDevice m_limelight = new LimelightDevice("limelight");
+
+    private final DriveTrain m_driveTrain = new DriveTrain(m_limelight);
 
     private final CommandXboxController m_driverController =
         new CommandXboxController(OperatorConstants.kDriverControllerPort);
