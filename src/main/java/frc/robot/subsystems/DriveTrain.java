@@ -122,20 +122,19 @@ public class DriveTrain extends SubsystemBase {
     }
 
     /**
-     * Called once per timeslice
-     *
-     * @return void
+     * Read the estimated position based on odemetry and then attempt to
+     * augment that with Limelight data if available.
      */
     @Override
     public void periodic() {
-        Pose2d current_pose = swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition();    
+        var pose = swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition();    
         if (limelight != null && isReal()) {
-            limelightPeriodic(current_pose.getRotation().getDegrees());
+            limelightPeriodic(pose.getRotation().getDegrees());
         }
 
-        SmartDashboard.putNumber("RobotX", current_pose.getX());
-        SmartDashboard.putNumber("RobotY", current_pose.getY());
-        SmartDashboard.putNumber("RobotRot", current_pose.getRotation().getDegrees());
+        SmartDashboard.putNumber("RobotX", pose.getX());
+        SmartDashboard.putNumber("RobotY", pose.getY());
+        SmartDashboard.putNumber("RobotRot", pose.getRotation().getDegrees());
     }
 
     /**
