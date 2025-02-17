@@ -1,9 +1,9 @@
-package frc.robot.helpers;
+package frc.robot;
 
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.helpers.LimelightHelpers.PoseEstimate;
+import frc.robot.LimelightHelpers.PoseEstimate;
 
 /**
  * Represents a physical Limelight camera exposing the getPoseEstimate based on
