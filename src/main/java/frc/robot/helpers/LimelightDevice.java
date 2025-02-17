@@ -1,87 +1,60 @@
 package frc.robot.helpers;
 
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.helpers.LimelightHelpers.PoseEstimate;
 
+/**
+ * Represents a physical Limelight camera exposing the getPoseEstimate based on
+ * given heading and AprilTag in view.
+ */
 public class LimelightDevice {
-    String            name;
 
-    NetworkTable      table;
+    // name of the Limelight used in NetworkTable
+    private final String name;
 
-    NetworkTableEntry tx;
-
-    NetworkTableEntry ty;
-
-    NetworkTableEntry ta;
-
-    NetworkTableEntry tid;
-
-    NetworkTableEntry tl;
-
-    NetworkTableEntry cl;
-
-    NetworkTableEntry botpose;
+    // AprilTag ID visible; -1 if not currently visible
+    private final NetworkTableEntry tid;
 
     public LimelightDevice(String limelightName) {
-        name    = limelightName;
-        table   = NetworkTableInstance.getDefault().getTable(name);
+        name = limelightName;
 
-        tx      = table.getEntry("tx");
-
-        ty      = table.getEntry("ty");
-
-        ta      = table.getEntry("ta");
-
-        tid     = table.getEntry("tid");
-
-        tl      = table.getEntry("tl");
-
-        cl      = table.getEntry("cl");
-
-        botpose = table.getEntry("botpose");
-
+        var networkTable = NetworkTableInstance.getDefault().getTable(name);
+        tid = networkTable.getEntry("tid");
     }
 
     public String getName() {
         return name;
     }
 
-    public Double getX() {
-        return tx.getDouble(0.0);
-    }
-
-    public Double getY() {
-        return ty.getDouble(0.0);
-    }
-
-    public Double getAprilTagId() {
-        return tid.getDouble(0.0);
-    }
-
-    public Double getArea() {
-        return ta.getDouble(0.0);
+    public long getAprilTagId() {
+        return tid.getInteger(-1L);
     }
 
     /**
-     * Gets the pose estimate of the robot based on a reading from the current Limelight
+     * Gets the pose estimate of the robot based on a reading from the current
+     * Limelight
      * @param headingDegress The degree of the robot's current heading
      * @return An estimate based on any tag readings from the Limelight
      */
     public PoseEstimate getPoseEstimate(double headingDegress) {
-        putSmartDashboardData();
+        updateDashboard(headingDegress);
 
-        LimelightHelpers.SetRobotOrientation(name, headingDegress, 0.0, 0.0, 0.0, 0.0, 0);
-        LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
-        return mt2;
+        // LimelightHelpers comes from https://github.com/LimelightVision/limelightlib-wpijava
+        // only the yaw from the gyro is necessary here so rest of params are 0;
+        // docs say SetRobotOrientation must be called before getBotPostEsimate
+        LimelightHelpers.SetRobotOrientation(getName(), headingDegress, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+        // https://docs.limelightvision.io/docs/docs-limelight/pipeline-apriltag/apriltag-robot-localization-megatag2
+        // > For 2024 and beyond, the origin of your coordinate system should
+        // > always be the "blue" origin. FRC teams should always use
+        // > botpose_orb_wpiblue for pose-related functionality
+        return LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
     }
 
-    private void putSmartDashboardData() {
-        SmartDashboard.putNumber(name + "-Limelight-X", getX());
-        SmartDashboard.putNumber(name + "-Limelight-Y", getY());
-        SmartDashboard.putNumber(name + "-Limelight-AprilTagId", getAprilTagId());
-        SmartDashboard.putNumber(name + "-Limelight-Area", getArea());
+    private void updateDashboard(double headingDegrees) {
+        SmartDashboard.putNumber(getName() + "-Limelight-AprilTagId", getAprilTagId());
+        SmartDashboard.putNumber(getName() + "-Limelight-HeadingDegrees", headingDegrees);
     }
 }
