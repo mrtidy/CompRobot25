@@ -13,6 +13,11 @@ package frc.robot;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+  public static class DeviceConstants {
+    // set this to whatever the CAN ID of the controller connected to the climber motor is
+    public static final int kClimberControllerId = 8;
+  }
+
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
   }
